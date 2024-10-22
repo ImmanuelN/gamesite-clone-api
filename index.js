@@ -5,7 +5,7 @@ const multer = require("multer");
 
 var app = Express();
 app.use(cors());
-const upload = multer({ storage: multer.memoryStorage() }); // Use memory storage for file uploads
+app.use(Express.json()); // Add this to handle JSON requests
 
 var CONNECTION_STRING = "mongodb+srv://Imms:imms@cluster0.2ccip.mongodb.net/?retryWrites=true&w=majority&appName=Cluster";
 var DATABASENAME = "GameHub_Database";
@@ -38,26 +38,26 @@ app.get('/api/gamehub/getGames', (request, response) => {
     });
 });
 
-// Add a new game
-app.post('/api/gamehub/addGame', upload.fields([{ name: 'thumbnail' }, { name: 'gameFile' }]), async (request, response) => {
-    console.log('API called'); // Log when the API is called
+// Handle adding a new game
+app.post('/api/gamehub/addGame', async (request, response) => {
+    console.log('Uploading Game');
 
     try {
-      console.log('Uploaded files:', request.files);
-        // Create a new game object
+        const { gameName, gameDescription, selectedCategory, thumbnailUrl, gameFileUrl } = request.body;
+
         const newGame = {
-            name: request.body.newGame,
-            description: request.body.description,
-            //gamePic: request.files['thumbnail'] ? request.files['thumbnail'][0].buffer : null, // Store file buffer for thumbnail
-            //gameFile: request.files['gameFile'] ? request.files['gameFile'][0].buffer : null, // Store file buffer for game file
-            
+            name: gameName,
+            description: gameDescription,
+            category: selectedCategory,
+            gamePic: thumbnailUrl,
+            gameFile: gameFileUrl,
         };
 
         // Insert the new game into the database
         await database.collection("Games").insertOne(newGame);
         response.json("Added Successfully");
     } catch (error) {
-        console.error("Error adding game:", error.message); // Log error message for debugging
+        console.error("Error adding game:", error);
         response.status(500).json("An error occurred while adding the game");
     }
 });
